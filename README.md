@@ -153,8 +153,8 @@ iot-stm32-dht11-project/
 
 ## 联系方式
 如有问题或建议，请通过以下方式联系：
-- 邮箱: [your-email@example.com]
-- GitHub: [your-github-username]
+- 邮箱: [pjkyoht716@gmail.com]
+- GitHub: [YohtHill]
 
 ---
 
