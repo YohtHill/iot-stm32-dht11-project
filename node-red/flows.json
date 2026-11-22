@@ -1,0 +1,108 @@
+[
+  {
+    "id": "a1b2c3d4e5f60001",
+    "type": "tab",
+    "label": "STM32 sensor / 传感器",
+    "disabled": false,
+    "info": "STM32 DHT11 telemetry / STM32 DHT11 遥测"
+  },
+  {
+    "id": "a1b2c3d4e5f60002",
+    "type": "http in",
+    "z": "a1b2c3d4e5f60001",
+    "x": 160,
+    "y": 100,
+    "wires": [
+      [
+        "a1b2c3d4e5f60003"
+      ]
+    ],
+    "method": "post",
+    "url": "/sensor",
+    "name": "POST /sensor",
+    "upload": false,
+    "swaggerDoc": ""
+  },
+  {
+    "id": "a1b2c3d4e5f60003",
+    "type": "function",
+    "z": "a1b2c3d4e5f60001",
+    "x": 410,
+    "y": 100,
+    "wires": [
+      [
+        "a1b2c3d4e5f60004"
+      ],
+      [
+        "a1b2c3d4e5f60005"
+      ]
+    ],
+    "outputs": 2,
+    "name": "Validate and store / 校验与缓存",
+    "func": "const reading = msg.payload;\nconst keys = [\"temp\", \"humi\", \"light\"];\nif (!reading || !keys.every((key) => Number.isFinite(reading[key]))) {\n    msg.statusCode = 400;\n    msg.payload = { error: \"Expected finite numeric temp, humi and light\" };\n    return [msg, null];\n}\nconst sample = {\n    temp: reading.temp,\n    humi: reading.humi,\n    light: reading.light,\n    receivedAt: new Date().toISOString()\n};\nflow.set(\"latestReading\", sample);\nmsg.statusCode = 200;\nmsg.payload = { ok: true };\nreturn [msg, { payload: sample }];\n",
+    "initialize": "",
+    "finalize": "",
+    "libs": []
+  },
+  {
+    "id": "a1b2c3d4e5f60004",
+    "type": "http response",
+    "z": "a1b2c3d4e5f60001",
+    "x": 680,
+    "y": 100,
+    "wires": [],
+    "statusCode": "",
+    "headers": {},
+    "name": "HTTP response / HTTP 响应"
+  },
+  {
+    "id": "a1b2c3d4e5f60005",
+    "type": "debug",
+    "z": "a1b2c3d4e5f60001",
+    "x": 680,
+    "y": 160,
+    "wires": [],
+    "name": "Reading / 传感器读数",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg"
+  },
+  {
+    "id": "a1b2c3d4e5f60006",
+    "type": "http in",
+    "z": "a1b2c3d4e5f60001",
+    "x": 160,
+    "y": 220,
+    "wires": [
+      [
+        "a1b2c3d4e5f60007"
+      ]
+    ],
+    "method": "get",
+    "url": "/sensor/latest",
+    "name": "GET /sensor/latest",
+    "upload": false,
+    "swaggerDoc": ""
+  },
+  {
+    "id": "a1b2c3d4e5f60007",
+    "type": "function",
+    "z": "a1b2c3d4e5f60001",
+    "x": 410,
+    "y": 220,
+    "wires": [
+      [
+        "a1b2c3d4e5f60004"
+      ]
+    ],
+    "outputs": 1,
+    "name": "Get latest / 获取最新读数",
+    "func": "const sample = flow.get(\"latestReading\");\nmsg.statusCode = sample ? 200 : 404;\nmsg.payload = sample || { error: \"No readings received\" };\nreturn msg;\n",
+    "initialize": "",
+    "finalize": "",
+    "libs": []
+  }
+]

@@ -1,157 +1,28 @@
-# IoT Data Acquisition and Node-RED Visualization System
+# STM32 IoT Sensor to Node-RED | STM32 物联网采集与 Node-RED
 
-基于 STM32F103 + DHT11 + 光敏传感器的物联网数据采集与 Node-RED 可视化系统
+[English](#english) · [简体中文](#简体中文)
 
-## 项目概述
+## English
 
-本项目是一个完整的物联网数据采集与可视化系统，使用 STM32F103 微控制器作为核心处理器，集成了 DHT11 温湿度传感器和光敏传感器，通过 Node-RED 平台实现数据的实时可视化。
+An STM32F103ZE reads a DHT11 temperature and humidity sensor and an analog light sensor. The firmware sends JSON over an ESP8266 AT-command UART connection to Node-RED. This package includes the [application entry point](firmware-example/main.c) and an [importable Node-RED flow](node-red/flows.json).
 
-## 系统架构
+1. For hardware, use a Keil MDK project for the STM32F103ZE with the corresponding standard peripheral library, DHT11, light sensor, board GPIO, delay and USART drivers. Copy the application entry point into that project and set the local Wi-Fi and Node-RED host placeholders. Keep real settings in your local working copy.
+2. Import node-red/flows.json in Node-RED and deploy. The POST /sensor endpoint validates three numeric fields and writes the latest sample to the Debug sidebar. GET /sensor/latest returns the latest accepted sample.
+3. Start with the HTTP smoke test below. Use the Node-RED machine's LAN address in the firmware when moving to hardware. The flow uses in-memory state by default and is intended for a local lab network.
 
-### 硬件组件
-- **主控制器**: STM32F103C8T6 微控制器
-- **温湿度传感器**: DHT11 数字温湿度传感器
-- **光敏传感器**: 用于检测环境光照强度
-- **通信模块**: 支持串口通信或 WiFi/以太网模块（根据具体实现）
-- **电源模块**: 为系统提供稳定电源
+## 简体中文
 
-### 软件组件
-- **嵌入式固件**: 基于 STM32 HAL 库或标准外设库开发
-- **数据采集程序**: 定时读取传感器数据
-- **通信协议**: 实现数据上传协议
-- **Node-RED 流**: 数据接收、处理和可视化界面
-- **数据库**: 可选的数据存储方案（如 InfluxDB、MySQL）
+STM32F103ZE 采集 DHT11 温湿度和光敏传感器数据，经串口控制 ESP8266，将 JSON 传给 Node-RED。本仓库提供[应用入口](firmware-example/main.c)和[可导入的 Node-RED 流程](node-red/flows.json)。
 
-## 功能特性
+1. 实物端使用 STM32F103ZE 的 Keil MDK 工程，准备对应标准外设库及 DHT11、光敏、GPIO、延时和 USART 驱动。将应用入口加入工程，并在本地工作副本里填写 Wi-Fi 和 Node-RED 主机占位符。
+2. 在 Node-RED 中导入 node-red/flows.json 并部署。POST /sensor 校验三个数值字段，并在 Debug 侧栏显示最新采样。GET /sensor/latest 返回最后一次接收的读数。
+3. 先执行下方 HTTP 冒烟测试。连接实物时，在固件中填写 Node-RED 主机的局域网地址。流程默认将读数保存在内存中，面向本地实验网络。
 
-1. **实时数据采集**
-   - 温度监测：范围 0-50°C，精度 ±2°C
-   - 湿度监测：范围 20-90%RH，精度 ±5%RH
-   - 光照强度监测：根据光敏传感器特性
+~~~powershell
+Invoke-RestMethod -Method Post -Uri http://localhost:1880/sensor -ContentType 'application/json' -Body '{"temp":24,"humi":52,"light":37}'
+Invoke-RestMethod -Uri http://localhost:1880/sensor/latest
+~~~
 
-2. **数据传输**
-   - 支持串口/USB 通信
-   - 可选 WiFi/以太网远程传输
-   - 数据格式标准化（JSON/CSV）
+Temperature is in °C, humidity is in %RH, and light is a firmware sensor reading. / 温度单位为 °C，湿度单位为 %RH，光照为固件传感器读数。
 
-3. **可视化界面**
-   - Node-RED Dashboard 实时图表
-   - 历史数据查询与展示
-   - 数据报警与通知功能
-   - 移动端适配界面
-
-4. **数据处理**
-   - 数据滤波与校准
-   - 异常值检测与处理
-   - 数据存储与导出
-
-## 项目文件结构
-
-```
-iot-stm32-dht11-project/
-├── README.md                    # 项目说明文档
-├── IOT_LSENS&DHT11 - 副本.rar  # 项目源代码压缩包
-├── 作品视频.MP4                 # 系统演示视频
-└── 设计报告/                    # 项目设计文档
-    ├── 设计报告.docx           # Word 格式设计报告
-    └── 设计报告.pdf            # PDF 格式设计报告
-```
-
-## 硬件连接
-
-### STM32F103 引脚配置
-- **DHT11**: 
-  - DATA → PA0 (或其他 GPIO)
-  - VCC → 3.3V/5V
-  - GND → GND
-  
-- **光敏传感器**:
-  - AO → PA1 (ADC 输入)
-  - DO → 可选数字输出
-  - VCC → 3.3V/5V
-  - GND → GND
-
-- **通信接口**:
-  - UART1: PA9(TX), PA10(RX) - 用于调试/数据传输
-  - 可选: USART2/3 用于其他通信模块
-
-## 软件配置
-
-### 开发环境
-- **IDE**: Keil uVision / STM32CubeIDE
-- **编译工具**: ARM GCC / ARMCC
-- **调试工具**: ST-LINK / J-Link
-
-### 依赖库
-- STM32 HAL 库 或 标准外设库
-- DHT11 驱动库
-- ADC 采集库
-- UART 通信库
-
-### Node-RED 配置
-1. 安装 Node-RED
-   ```bash
-   npm install -g node-red
-   ```
-
-2. 安装必要节点
-   ```bash
-   npm install node-red-dashboard
-   npm install node-red-contrib-influxdb  # 可选
-   ```
-
-3. 导入项目流文件
-   - 打开 Node-RED 编辑器 (http://localhost:1880)
-   - 导入项目提供的流文件
-
-## 使用说明
-
-### 硬件部署
-1. 按照电路图连接所有组件
-2. 检查电源连接是否正确
-3. 使用 ST-LINK 下载固件到 STM32
-
-### 软件部署
-1. 编译并下载固件到 STM32
-2. 启动 Node-RED 服务
-3. 配置串口通信参数（波特率、数据位等）
-4. 打开 Node-RED Dashboard 界面
-
-### 数据查看
-1. 访问 Node-RED Dashboard: http://localhost:1880/ui
-2. 查看实时温湿度曲线
-3. 查看光照强度变化
-4. 导出历史数据进行分析
-
-## 项目特点
-
-### 技术亮点
-1. **低功耗设计**: STM32 低功耗模式优化
-2. **高精度采集**: 传感器数据校准算法
-3. **实时性**: 毫秒级数据更新频率
-4. **可扩展性**: 模块化设计，易于添加新传感器
-5. **跨平台**: 支持 Windows/Linux/macOS
-
-### 应用场景
-- 智能家居环境监测
-- 农业温室监控
-- 实验室数据采集
-- 工业环境监测
-- 教育教学演示
-
-## 作者
-- **作者**: Archi
-
-## 许可证
-本项目采用 MIT 许可证。详见 LICENSE 文件。
-
-## 致谢
-感谢指导老师和项目组成员的支持与贡献。
-
-## 联系方式
-如有问题或建议，请通过本仓库的 GitHub Issues 联系。
-
----
-
-**最后更新**: 2025年12月20日
-**版本**: v1.0
+Verified on Node-RED 4.0.9 with an accepted sample, invalid input and an empty latest-reading request. / 已用 Node-RED 4.0.9 实测有效采样、无效输入和未收到读数时的查询。
